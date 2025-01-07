@@ -14,10 +14,22 @@ const oggettoStatePartenza = {
 };
 
 const urlIndex = "http://localhost:3000/Ricette";
+const urlDelete = "http://localhost:3000/Ricette/";
+
 // Funzione che fa fetch data back-end tramite axios
 const fetchIniziale = async () => {
   try {
     const response = await axios.get(urlIndex);
+    return response.data; // Restituisci i dati
+  } catch (error) {
+    console.error("Errore nella fetch:", error);
+    return null; // Gestisci l'errore
+  }
+};
+
+const fetchDelete = async (id) => {
+  try {
+    const response = await axios.delete(`${urlDelete}${id}`);
     return response.data; // Restituisci i dati
   } catch (error) {
     console.error("Errore nella fetch:", error);
@@ -30,6 +42,17 @@ function App() {
 
   // Faccio arrayState che conterrà tutti i nostri oggetti a onSubmit del form
   const [arrayState, setArrayState] = useState([]);
+
+  const fetchPost = async () => {
+    try {
+      const response = await axios.post(urlIndex, oggettoInpState);
+      console.log("Vengo dal post",response.data);
+      return response.data;
+    } catch (error) {
+      console.error("Errore nella fetch:", error);
+      return null;
+    }
+  };
 
   // useQuery mi fa il fetch di data utilizzando la funzione fatta prima per il fetch iniziale
   const { data, isLoading, isError, error, refetch } = useQuery({
@@ -45,7 +68,6 @@ function App() {
       setArrayState(data);
     }
   }, [data]);
-
 
   useEffect(() => {
     if (oggettoInpState.pubblica) alert("Sto per pubblicare articolo");
@@ -88,19 +110,36 @@ function App() {
     if (oggettoInpState.pubblica) {
       setArrayState((prev_arr) => [...prev_arr, oggettoInpState]);
       oggettoSetInpState(oggettoStatePartenza);
+      fetchPost();
+    }
+
+  };
+
+  const funzioneCestina = async (idToDelete) => {
+    try {
+      // Fai la chiamata DELETE al backend
+      const deleteResponse = await fetchDelete(idToDelete);
+
+      if (deleteResponse) {
+        // Aggiorna l'arrayState eliminando l'elemento con l'ID specifico
+        setArrayState((prev_arr) =>
+          prev_arr.filter((item) => item.id !== idToDelete)
+        );
+        refetch(); // Facoltativo, per sincronizzare con il backend
+      } else {
+        console.error("Errore nella cancellazione.");
+      }
+    } catch (error) {
+      console.error("Errore in funzioneCestina:", error);
     }
   };
 
-  const funzioneCestina = (indexToDelete) => {
-    // console.log(`Volgio cancellare elemento array: ${indexToDelete}`);
-
-    // Io voglio fare un filter rimuovendo id indexToDelete da arrayState
-
-    const newArray = arrayState.filter(
-      (currElement, currIndex) => currIndex !== indexToDelete
-    );
-
-    setArrayState(newArray);
+  // Callback eseguita ad onClick di button che aggiorna da backend
+  const aggiornaDaBackend = (event) => {
+    refetch();
+    setArrayState(data);
+    console.log(data);
+    console.log(arrayState);
   };
 
   // console.log(arrayState);
@@ -230,19 +269,21 @@ function App() {
         {/* Card contenente dati da oggettoInputState */}
         <button type="submit">Invia</button>
       </form>
+      <button className="btn-backend" onClick={aggiornaDaBackend}>
+        Aggiorna da Backend
+      </button>
       <hr />
       {arrayState &&
         Array.isArray(arrayState) &&
-        arrayState.map((currObject, currIndex) => (
+        arrayState.map((currObject) => (
           <Card
-            key={currIndex}
+            key={currObject.id} // Usa l'ID univoco
             titolo={currObject.titolo}
             contenuto={currObject.contenuto}
             categoria={currObject.categoria}
             immagine={currObject.immagine}
-            // arrayTags={currObject.tags}
             callbackCestina={(event) => {
-              funzioneCestina(currIndex);
+              funzioneCestina(currObject.id); // Passa l'ID
             }}
           />
         ))}
