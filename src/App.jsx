@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "./components/Card";
-import { useEffect } from "react";
-import { Input } from "./components/Input";
+import axios from "axios";
+import { useQuery } from "@tanstack/react-query";
 
 // Facciamo oggetto state di PARTENZA
 const oggettoStatePartenza = {
@@ -13,11 +13,39 @@ const oggettoStatePartenza = {
   tags: [],
 };
 
+const urlIndex = "http://localhost:3000/Ricette";
+// Funzione che fa fetch data back-end tramite axios
+const fetchIniziale = async () => {
+  try {
+    const response = await axios.get(urlIndex);
+    return response.data; // Restituisci i dati
+  } catch (error) {
+    console.error("Errore nella fetch:", error);
+    return null; // Gestisci l'errore
+  }
+};
+
 function App() {
   const [oggettoInpState, oggettoSetInpState] = useState(oggettoStatePartenza);
 
   // Faccio arrayState che conterrà tutti i nostri oggetti a onSubmit del form
   const [arrayState, setArrayState] = useState([]);
+
+  // useQuery mi fa il fetch di data utilizzando la funzione fatta prima per il fetch iniziale
+  const { data, isLoading, isError, error, refetch } = useQuery({
+    queryKey: ["fetchDaBackend"],
+    queryFn: fetchIniziale,
+    refetchOnWindowFocus: false,
+  });
+
+  // Se data cambia allora aggiorno arrayState con la data presa dal backend
+  useEffect(() => {
+    if (data) {
+      // Ho controllato che il mio array state viene sostituito con l'array preso dal backend
+      setArrayState(data);
+    }
+  }, [data]);
+
 
   useEffect(() => {
     if (oggettoInpState.pubblica) alert("Sto per pubblicare articolo");
@@ -57,11 +85,9 @@ function App() {
 
   const callbackOnSubmit = (event) => {
     event.preventDefault();
-
-    // Se pubblica è true noi aggiungiamo oggettoInput ad arrayState
     if (oggettoInpState.pubblica) {
-      const nuovoArray = [...arrayState, oggettoInpState];
-      setArrayState(nuovoArray);
+      setArrayState((prev_arr) => [...prev_arr, oggettoInpState]);
+      oggettoSetInpState(oggettoStatePartenza);
     }
   };
 
@@ -81,7 +107,7 @@ function App() {
   return (
     <>
       <h1>Inserisci libro</h1>
-      <form onSubmit={callbackOnSubmit}>
+      <form className="form" onSubmit={callbackOnSubmit}>
         {/* Input per titolo */}
         <div>
           <label htmlFor="titolo">
@@ -95,7 +121,7 @@ function App() {
               required
             />
           </label>
-          <p>{oggettoInpState.titolo}</p>
+          {/* <p>{oggettoInpState.titolo}</p> */}
         </div>
         {/* Input per Immagine */}
         <div>
@@ -110,7 +136,7 @@ function App() {
               required
             />
           </label>
-          <p>{oggettoInpState.immagine}</p>
+          {/* <p>{oggettoInpState.immagine}</p> */}
         </div>
         {/* Input per contenuto */}
         <div>
@@ -125,7 +151,7 @@ function App() {
               required
             />
           </label>
-          <p>{oggettoInpState.contenuto}</p>
+          {/* <p>{oggettoInpState.contenuto}</p> */}
         </div>
         {/* Input per categoria */}
         <div>
@@ -142,7 +168,7 @@ function App() {
               <option value="Cartaceo">Cartaceo</option>
             </select>
           </label>
-          <p>{oggettoInpState.categoria}</p>
+          {/* <p>{oggettoInpState.categoria}</p> */}
         </div>
         {/* Input per checkbox pubblica */}
         <div>
@@ -155,7 +181,7 @@ function App() {
               onChange={callbackSyncInput}
             />
           </label>
-          <p>{oggettoInpState.pubblica}</p>
+          {/* <p>{oggettoInpState.pubblica}</p> */}
         </div>
         {/* Input per i checkbox tags */}
         <div>
@@ -205,19 +231,21 @@ function App() {
         <button type="submit">Invia</button>
       </form>
       <hr />
-      {arrayState.map((currObject, currIndex) => (
-        <Card
-          key={currIndex}
-          titolo={currObject.titolo}
-          contenuto={currObject.contenuto}
-          categoria={currObject.categoria}
-          immagine={currObject.immagine}
-          arrayTags={currObject.tags}
-          callbackCestina={(event) => {
-            funzioneCestina(currIndex);
-          }}
-        />
-      ))}
+      {arrayState &&
+        Array.isArray(arrayState) &&
+        arrayState.map((currObject, currIndex) => (
+          <Card
+            key={currIndex}
+            titolo={currObject.titolo}
+            contenuto={currObject.contenuto}
+            categoria={currObject.categoria}
+            immagine={currObject.immagine}
+            // arrayTags={currObject.tags}
+            callbackCestina={(event) => {
+              funzioneCestina(currIndex);
+            }}
+          />
+        ))}
     </>
   );
 }
