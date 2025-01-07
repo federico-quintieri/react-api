@@ -1,22 +1,18 @@
-// Faccio component per inserire input
-export function Input({
-  chiaveState,
-  objState,
-  callbackState,
-  tipoInput,
-  labelText,
-}) {
+export function Input({ proprieta, callbackSync }) {
   return (
-    <>
-      <label htmlFor={`inp-${chiaveState}`}>{labelText}</label>
-      <input
-        name={chiaveState}
-        id={`inp-${chiaveState}`}
-        type={tipoInput}
-        value={objState[chiaveState]}
-        onChange={callbackState}
-        required
-      />
-    </>
+    <div>
+      <label htmlFor={proprieta}>
+        Inserisci {proprieta}
+        <input
+          id={proprieta}
+          type={tipoInput}
+          name={proprieta}
+          value={oggettoInpState[proprieta]}
+          onChange={callbackSync}
+          required
+        />
+
+      </label>
+    </div>
   );
 }

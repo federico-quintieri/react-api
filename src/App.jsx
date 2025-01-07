@@ -1,131 +1,223 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { Card } from "./components/Card";
+import { useEffect } from "react";
 import { Input } from "./components/Input";
 
-const oggettoPartenza = {
+// Facciamo oggetto state di PARTENZA
+const oggettoStatePartenza = {
   titolo: "",
-  prezzo: 0,
   immagine: "",
   contenuto: "",
-  categoria: "default", // Categoria di default
-  pubblicato: false, // Stato booleano per il checkbox
+  categoria: "Digitale",
+  pubblica: false,
+  tags: [],
 };
 
 function App() {
-  const [inputState, setInputState] = useState(oggettoPartenza);
+  const [oggettoInpState, oggettoSetInpState] = useState(oggettoStatePartenza);
+
+  // Faccio arrayState che conterrà tutti i nostri oggetti a onSubmit del form
   const [arrayState, setArrayState] = useState([]);
 
   useEffect(() => {
-    // Codice da eseguire se variabile in dipendenza cambia
-    if (inputState.pubblicato) alert("Stai per pubblicare il libro");
-  }, [inputState.pubblicato]);
+    if (oggettoInpState.pubblica) alert("Sto per pubblicare articolo");
+  }, [oggettoInpState.pubblica]);
 
-  const callBackSetInputState = (event) => {
-    const { name, type, value, checked } = event.target;
-    setInputState((prevState) => ({
-      ...prevState,
-      [name]: type === "checkbox" ? checked : value, // Gestione checkbox
-    }));
+  // Callback che aggiorna oggettoInpState ad onChange
+  const callbackSyncInput = (event) => {
+    const { name, value, type, checked } = event.target;
+
+    let valoreInput;
+
+    // Devo controllare se il tipo dell'input è text o checkbox
+    if (type === "checkbox") {
+      valoreInput = checked;
+    } else valoreInput = value;
+
+    // Per aggiornare il nostro oggettoInpState devo creare nuovo oggetto copiando il precedente
+
+    oggettoSetInpState((prev_state) => {
+      return { ...prev_state, [name]: valoreInput };
+    });
   };
 
-  const callbackSettaOggettoState = (event) => {
-    event.preventDefault(); // Previene il refresh della pagina
+  const callbackSyncTags = (event) => {
+    // Prendo name e valore dell'input di tipo checkbox
+    const { name, checked } = event.target;
 
-    if (inputState.pubblicato) {
-      // Aggiungi una copia di inputState a arrayState
-      setArrayState((prevState) => [...prevState, inputState]);
+    const newArray = checked
+      ? [...oggettoInpState.tags, name]
+      : oggettoInpState.tags.filter((currElement) => currElement !== name);
+
+    oggettoSetInpState({
+      ...oggettoInpState,
+      tags: newArray,
+    });
+  };
+
+  const callbackOnSubmit = (event) => {
+    event.preventDefault();
+
+    // Se pubblica è true noi aggiungiamo oggettoInput ad arrayState
+    if (oggettoInpState.pubblica) {
+      const nuovoArray = [...arrayState, oggettoInpState];
+      setArrayState(nuovoArray);
     }
-
-    // Resetta lo stato del form
-    setInputState(oggettoPartenza);
   };
 
+  const funzioneCestina = (indexToDelete) => {
+    // console.log(`Volgio cancellare elemento array: ${indexToDelete}`);
+
+    // Io voglio fare un filter rimuovendo id indexToDelete da arrayState
+
+    const newArray = arrayState.filter(
+      (currElement, currIndex) => currIndex !== indexToDelete
+    );
+
+    setArrayState(newArray);
+  };
+
+  // console.log(arrayState);
   return (
     <>
-      <h1>Form Articolo</h1>
-      <form onSubmit={callbackSettaOggettoState}>
-        {/* Input per il titolo */}
-        <Input
-          chiaveState="titolo"
-          objState={inputState}
-          callbackState={callBackSetInputState}
-          tipoInput="text"
-          labelText="Inserisci titolo libro"
-        />
-
-        {/* Input per il prezzo */}
-        <Input
-          chiaveState="prezzo"
-          objState={inputState}
-          callbackState={callBackSetInputState}
-          tipoInput="number"
-          labelText="Inserisci prezzo libro"
-        />
-
-        {/* Input per l'immagine */}
-        <Input
-          chiaveState="immagine"
-          objState={inputState}
-          callbackState={callBackSetInputState}
-          tipoInput="text"
-          labelText="Inserisci URL immagine copertina"
-        />
-
-        {/* Input per il contenuto */}
-        <Input
-          chiaveState="contenuto"
-          objState={inputState}
-          callbackState={callBackSetInputState}
-          tipoInput="text"
-          labelText="Inserisci descrizione libro"
-        />
-
-        {/* Select categoria */}
-        <label htmlFor="categoria">Categoria:</label>
-        <select
-          name="categoria"
-          id="categoria"
-          value={inputState.categoria}
-          onChange={callBackSetInputState}
-        >
-          <option value="default" disabled>
-            Seleziona una categoria
-          </option>
-          <option value="romanzo">Romanzo</option>
-          <option value="saggio">Saggio</option>
-          <option value="poesia">Poesia</option>
-        </select>
-
-        {/* Checkbox pubblicazione */}
-        <Input
-          chiaveState="pubblicato"
-          objState={inputState}
-          callbackState={callBackSetInputState}
-          tipoInput="checkbox"
-          labelText="Pubblica articolo"
-        />
-        <button type="submit" className="btn btn-primary">
-          Salva articolo
-        </button>
-      </form>
-
-      {/* Card dinamiche */}
-      <div className="card-container">
-        {arrayState.map((currObject, index) => (
-          <div key={index} className="card">
-            <h3>{currObject.titolo}</h3>
-            <p>Prezzo: €{currObject.prezzo}</p>
-            <img
-              src={currObject.immagine || "https://via.placeholder.com/150"}
-              alt={`Copertina di ${currObject.titolo}`}
+      <h1>Inserisci libro</h1>
+      <form onSubmit={callbackOnSubmit}>
+        {/* Input per titolo */}
+        <div>
+          <label htmlFor="titolo">
+            Inserisci Titolo
+            <input
+              id="titolo"
+              type="text"
+              name="titolo"
+              value={oggettoInpState.titolo}
+              onChange={callbackSyncInput}
+              required
             />
-            <p>{currObject.contenuto}</p>
-            <p>Categoria: {currObject.categoria}</p>
-            <p>
-              Stato: {currObject.pubblicato ? "Pubblicato" : "Non pubblicato"}
-            </p>
-          </div>
-        ))}
-      </div>
+          </label>
+          <p>{oggettoInpState.titolo}</p>
+        </div>
+        {/* Input per Immagine */}
+        <div>
+          <label htmlFor="immagine">
+            Inserisci Immagine
+            <input
+              id="immagine"
+              type="text"
+              name="immagine"
+              value={oggettoInpState.immagine}
+              onChange={callbackSyncInput}
+              required
+            />
+          </label>
+          <p>{oggettoInpState.immagine}</p>
+        </div>
+        {/* Input per contenuto */}
+        <div>
+          <label htmlFor="contenuto">
+            Inserisci contenuto
+            <input
+              id="contenuto"
+              type="text"
+              name="contenuto"
+              value={oggettoInpState.contenuto}
+              onChange={callbackSyncInput}
+              required
+            />
+          </label>
+          <p>{oggettoInpState.contenuto}</p>
+        </div>
+        {/* Input per categoria */}
+        <div>
+          <label htmlFor="categoria">
+            Inserisci categoria
+            <select
+              id="categoria"
+              type="text"
+              name="categoria"
+              value={oggettoInpState.categoria}
+              onChange={callbackSyncInput}
+            >
+              <option value="Digitale">Digitale</option>
+              <option value="Cartaceo">Cartaceo</option>
+            </select>
+          </label>
+          <p>{oggettoInpState.categoria}</p>
+        </div>
+        {/* Input per checkbox pubblica */}
+        <div>
+          <label htmlFor="pubblica">
+            Pubblica libro
+            <input
+              type="checkbox"
+              name="pubblica"
+              checked={oggettoInpState.pubblica}
+              onChange={callbackSyncInput}
+            />
+          </label>
+          <p>{oggettoInpState.pubblica}</p>
+        </div>
+        {/* Input per i checkbox tags */}
+        <div>
+          <h3>Scegli tags del libro</h3>
+          {/* Checkbox fantasy */}
+          <label htmlFor="fantasy">
+            Fantasy
+            <input
+              id="fantasy"
+              type="checkbox"
+              name="fantasy"
+              onChange={callbackSyncTags}
+            />
+          </label>
+          {/* Checkbox comedy */}
+          <label htmlFor="comedy">
+            Comedy
+            <input
+              id="comedy"
+              type="checkbox"
+              name="comedy"
+              onChange={callbackSyncTags}
+            />
+          </label>
+          {/* Checkbox action */}
+          <label htmlFor="action">
+            Action
+            <input
+              id="action"
+              type="checkbox"
+              name="action"
+              onChange={callbackSyncTags}
+            />
+          </label>
+          {/* Checkbox romance */}
+          <label htmlFor="romance">
+            Romance
+            <input
+              id="romance"
+              type="checkbox"
+              name="romance"
+              onChange={callbackSyncTags}
+            />
+          </label>
+        </div>
+        {/* Card contenente dati da oggettoInputState */}
+        <button type="submit">Invia</button>
+      </form>
+      <hr />
+      {arrayState.map((currObject, currIndex) => (
+        <Card
+          key={currIndex}
+          titolo={currObject.titolo}
+          contenuto={currObject.contenuto}
+          categoria={currObject.categoria}
+          immagine={currObject.immagine}
+          arrayTags={currObject.tags}
+          callbackCestina={(event) => {
+            funzioneCestina(currIndex);
+          }}
+        />
+      ))}
     </>
   );
 }
